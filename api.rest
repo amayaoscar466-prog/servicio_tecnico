@@ -1,0 +1,33 @@
+### Health check
+GET http://localhost:8001/api/health
+
+### 1. Registrar un usuario
+POST http://localhost:8001/api/registro
+Content-Type: application/json
+
+{
+  "nombres": "Juan",
+  "apellidos": "Pérez",
+  "email": "juan@mail.com",
+  "password": "Prueba123!"
+}
+
+### 2. Login (copia el "token" de la respuesta)
+POST http://localhost:8001/api/login
+Content-Type: application/json
+
+{
+  "email": "juan@mail.com",
+  "password": "Prueba123!"
+}
+
+### 3. Perfil (ruta protegida) — pega el token que te dio el login
+GET http://localhost:8001/api/perfil
+Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJqdWFuQG1haWwuY29tIiwicm9sIjoidXN1YXJpbyIsImV4cCI6MTc4NzI1NTQ1MH0.lrUE_6GcvdfWSEpZbpykV6vVwjHgMSwRZpp8tUjAKNg"
+
+### 4. Prueba de error: sin token
+GET http://localhost:8001/api/perfil
+
+### 5. Prueba de error: token inventado
+GET http://localhost:8001/api/perfil
+Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJqdWFuQG1haWwuY29tIiwicm9sIjoidXN1YXJpbyIsImV4cCI6MTc4NzI1NTQ1MH0.lrUE_6GcvdfWSEpZbpykV6vVwjHgMSwRZpp8tUjAKNg"
