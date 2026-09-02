@@ -6,3 +6,4 @@ export { oakCors } from "https://deno.land/x/cors@v1.2.2/mod.ts";
 export { create, verify, decode, getNumericDate } from "https://deno.land/x/djwt@v3.0.2/mod.ts";
 export { encodeBase64Url } from "https://deno.land/std@0.224.0/encoding/base64url.ts";
 export { default as bcrypt } from "npm:bcryptjs@^2.4.3";
+export { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";

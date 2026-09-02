@@ -28,7 +28,7 @@ export async function verificarAutenticacion(ctx: Context, next: Next) {
 export async function verificarTecnico(ctx: Context, next: Next) {
   const usuario = ctx.state.usuario;
 
-  if (!usuario || usuario.rol !== "tecnico") {
+  if (!usuario || usuario.id_rol !== 1) {   // antes: usuario.rol !== "tecnico"
     ctx.response.status = 403;
     ctx.response.body = {
       exito: false,
@@ -38,4 +38,18 @@ export async function verificarTecnico(ctx: Context, next: Next) {
   }
 
   await next();
+}
+export async function verificarAdmin(ctx:Context, next: Next) {
+  const usuario = ctx.state.usuario;
+
+  if(!usuario || usuario.id_rol !== 3){
+    ctx.response.status = 403;
+    ctx.response.body = {
+      exito: false,
+      mensaje : "acceso denegado : se requiere rol de administrador",
+    };
+    return;
+  }
+  await next();
+
 }

@@ -3,13 +3,14 @@ import { z } from "../Dependencies/dependencias.ts";
 import { UsuarioModel } from "../Model/usuario.model.ts";
 import { hashPassword, compararPassword } from "../Helpers/password.helper.ts";
 import { generarToken } from "../Helpers/jwt.helper.ts";
+import { correoBienvenida } from "../Helpers/mailer.helper.ts";
 
 const esquemaRegistro = z.object({
   nombres: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
   apellidos: z.string().min(2, "El apellido debe tener al menos 2 caracteres"),
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
-  rol: z.enum(["usuario", "tecnico"]).optional(),
+  id_rol: z.number().default(2),
 });
 
 const esquemaLogin = z.object({
@@ -31,7 +32,7 @@ export async function registrar(ctx: Context) {
     return;
   }
 
-  const { nombres, apellidos, email, password, rol } = resultado.data;
+  const { nombres, apellidos, email, password, id_rol } = resultado.data;
 
   const existente = await UsuarioModel.buscarPorEmail(email);
   if (existente) {
@@ -41,8 +42,11 @@ export async function registrar(ctx: Context) {
   }
 
   const passwordHash = await hashPassword(password);
-  const nuevoId = await UsuarioModel.crear({ nombres, apellidos, email, passwordHash, rol });
+  const nuevoId = await UsuarioModel.crear({ nombres, apellidos, email, passwordHash, id_rol });
 
+  correoBienvenida({ para: email, nombres }); // sin await, igual que en el resto del código
+
+  ctx.response.status = 201;
   ctx.response.status = 201;
   ctx.response.body = {
     exito: true,
@@ -81,23 +85,23 @@ export async function iniciarSesion(ctx: Context) {
     return;
   }
 
-  const token = await generarToken({ id: usuario.id, email: usuario.email, rol: usuario.rol });
+  const token = await generarToken({ id: usuario.id, email: usuario.email, id_rol: usuario.id_rol });
 
   ctx.response.status = 200;
   ctx.response.body = {
-    exito: true,
-    mensaje: "Sesión iniciada correctamente",
-    datos: {
-      token,
-      usuario: {
-        id: usuario.id,
-        nombres: usuario.nombres,
-        apellidos: usuario.apellidos,
-        email: usuario.email,
-        rol: usuario.rol,
-      },
+  exito: true,
+  mensaje: "Sesión iniciada correctamente",
+  datos: {
+    token,
+    usuario: {
+      id: usuario.id,
+      nombres: usuario.nombres,
+      apellidos: usuario.apellidos,
+      email: usuario.email,
+      id_rol: usuario.id_rol,   // antes: rol: usuario.id_rol
     },
-  };
+  },
+};
 }
 
 /**
@@ -119,4 +123,5 @@ export async function verPerfil(ctx: Context) {
 
   ctx.response.status = 200;
   ctx.response.body = { exito: true, datos: usuario };
+  
 }

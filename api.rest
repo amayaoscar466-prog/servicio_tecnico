@@ -1,33 +1,150 @@
-### Health check
-GET http://localhost:8001/api/health
+@baseUrl = http://localhost:8001
 
-### 1. Registrar un usuario
-POST http://localhost:8001/api/registro
+### ============================================
+### 1. HEALTH CHECK
+### ============================================
+GET {{baseUrl}}/api/health
+
+
+### ============================================
+### 2. AUTENTICACIÓN — ejecuta estos dos primero
+### ============================================
+
+### Login como usuario
+# @name loginUsuario
+POST {{baseUrl}}/api/registro
 Content-Type: application/json
 
 {
-  "nombres": "Juan",
-  "apellidos": "Pérez",
-  "email": "juan@mail.com",
-  "password": "Prueba123!"
+  "nombres" : "diego",
+  "apellidos":"trujillo",
+  "email": "diegoalexandertrujillomedina@gmail.com",
+  "password": "123456",
+  "id_rol":2
 }
 
-### 2. Login (copia el "token" de la respuesta)
-POST http://localhost:8001/api/login
+### Login como técnico
+# @name loginTecnico
+POST {{baseUrl}}/api/login
 Content-Type: application/json
 
 {
-  "email": "juan@mail.com",
-  "password": "Prueba123!"
+  "email": "castillo.tecnico@mail.com",
+  "password": "Prueba1234%"
 }
 
-### 3. Perfil (ruta protegida) — pega el token que te dio el login
-GET http://localhost:8001/api/perfil
-Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJqdWFuQG1haWwuY29tIiwicm9sIjoidXN1YXJpbyIsImV4cCI6MTc4NzI1NTQ1MH0.lrUE_6GcvdfWSEpZbpykV6vVwjHgMSwRZpp8tUjAKNg"
 
-### 4. Prueba de error: sin token
-GET http://localhost:8001/api/perfil
+### ============================================
+### 3. PERFIL
+### ============================================
 
-### 5. Prueba de error: token inventado
-GET http://localhost:8001/api/perfil
-Authorization: Bearer "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJqdWFuQG1haWwuY29tIiwicm9sIjoidXN1YXJpbyIsImV4cCI6MTc4NzI1NTQ1MH0.lrUE_6GcvdfWSEpZbpykV6vVwjHgMSwRZpp8tUjAKNg"
+### Ver mi perfil (usa el token de usuario automáticamente)
+GET {{baseUrl}}/api/perfil
+Authorization: Bearer {{loginUsuario.response.body.datos.token}}
+
+
+### ============================================
+### 4. SOLICITUDES — USUARIO
+### ============================================
+
+### Crear una solicitud
+# @name crearSolicitud
+POST {{baseUrl}}/api/solicitudes
+Content-Type: application/json
+Authorization: Bearer {{loginUsuario.response.body.datos.token}}
+
+{
+  "asunto": "PC no inicia",
+  "descripcion": "El equipo no enciende desde ayer, revisé la fuente",
+  "prioridad": "alta"
+}
+
+### Ver mis solicitudes
+GET {{baseUrl}}/api/solicitudes/mias
+Authorization: Bearer {{loginUsuario.response.body.datos.token}}
+
+### Ver el detalle de la solicitud 1
+GET {{baseUrl}}/api/solicitudes/1
+Authorization: Bearer {{loginUsuario.response.body.datos.token}}
+
+
+### ============================================
+### 5. SOLICITUDES — TÉCNICO
+### ============================================
+
+### Listar todas con filtros
+GET {{baseUrl}}/api/solicitudes?estado=pendiente&prioridad=alta
+Authorization: Bearer {{loginTecnico.response.body.datos.token}}
+
+### Asignarme la solicitud 1 (con diagnóstico y tiempo estimado — dispara correo 2)
+PATCH {{baseUrl}}/api/solicitudes/1/asignar
+Content-Type: application/json
+Authorization: Bearer {{loginTecnico.response.body.datos.token}}
+
+{
+  "diagnostico": "La fuente de poder está dañada, se identificó al abrir el equipo",
+  "tiempoEstimado": "2 días hábiles"
+}
+
+### Cerrar la solicitud (dispara correo 3: solucionada)
+PATCH {{baseUrl}}/api/solicitudes/1/estado
+Content-Type: application/json
+Authorization: Bearer {{loginTecnico.response.body.datos.token}}
+
+{
+  "estado": "cerrada"
+}
+### ============================================
+### 6. ARCHIVOS
+### ============================================
+
+### Subir un archivo (usuario, dueño de la solicitud)
+POST {{baseUrl}}/api/solicitudes/1/archivos
+Authorization: Bearer {{loginUsuario.response.body.datos.token}}
+Content-Type: multipart/form-data; boundary=----LimiteArchivo
+
+------LimiteArchivo
+Content-Disposition: form-data; name="archivo"; filename="prueba.png"
+Content-Type: image/png
+
+< ./prueba.png
+------LimiteArchivo--
+
+### Listar archivos de la solicitud 1
+GET {{baseUrl}}/api/solicitudes/1/archivos
+Authorization: Bearer {{loginUsuario.response.body.datos.token}}
+
+### Descargar archivo (técnico)
+GET {{baseUrl}}/api/archivos/1/descargar
+Authorization: Bearer {{loginTecnico.response.body.datos.token}}
+
+### Crear solicitud (dispara correo de "registrada")
+# @name crearSolicitud
+POST {{baseUrl}}/api/solicitudes
+Content-Type: application/json
+Authorization: Bearer {{loginUsuario.response.body.datos.token}}
+
+{
+  "asunto": "PC no inicia",
+  "descripcion": "El equipo no enciende desde ayer, revisé la fuente",
+  "prioridad": "alta"
+}
+
+### Asignar con diagnóstico (dispara correo de "en_proceso")
+PATCH {{baseUrl}}/api/solicitudes/1/asignar
+Content-Type: application/json
+Authorization: Bearer {{loginTecnico.response.body.datos.token}}
+
+{
+  "diagnostico": "La fuente de poder está dañada, se identificó al abrir el equipo",
+  "tiempoEstimado": "2 días hábiles"
+}
+
+### Cerrar (dispara correo de "solucionada")
+PATCH {{baseUrl}}/api/solicitudes/1/estado
+Content-Type: application/json
+Authorization: Bearer {{loginTecnico.response.body.datos.token}}
+
+{
+  "estado": "cerrada"
+}
